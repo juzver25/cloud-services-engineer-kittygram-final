@@ -17,6 +17,10 @@ jobs:
         with:
           python-version: 3.9
 
+      - name: Check kittygram
+        run: |
+             curl -v http://51.250.21.144:80
+
       - name: autopep8
         id: autopep8
         uses: peter-evans/autopep8@v2
