@@ -38,15 +38,15 @@ services:
       - static:/app/static
       - frontend_build:/app/build
 
-    nginx:
+  nginx:
     build: ./nginx
     container_name: kittygram_gateway
     ports:
       - "80:80"
     volumes:
+      - frontend_build:/usr/share/nginx/html
       - static:/usr/share/nginx/html/static  
-      - media:/usr/share/nginx/html/media    
-      - frontend_build:/usr/share/nginx/html 
+      - media:/usr/share/nginx/html/media         
     depends_on:
       - backend
       - frontend
