@@ -31,8 +31,11 @@ jobs:
         id: autopep8
         uses: peter-evans/autopep8@v2
         with:
-          args: --recursive --in-place --aggressive --aggressive .
-    # Обновляем pip, устанавливаем flake8 и flake8-isort, 
+          args: --recursive --in-place --aggressive --aggressive .    
+      - name: Fail if autopep8 made changes
+        if: steps.autopep8.outputs.exit-code == 2
+        run: exit 1
+   # Обновляем pip, устанавливаем flake8 и flake8-isort, 
     # устанавливаем зависимости проекта:
       - name: Install dependencies
         run: |
@@ -43,3 +46,4 @@ jobs:
       # Вызываем flake8 и указываем ему,
       # что нужно проверить файлы только в папке backend/
         run: python -m flake8 backend/
+        
