@@ -29,10 +29,9 @@ jobs:
           python-version: 3.9
       - name: autopep8
         id: autopep8
-        run: cd /backend
         uses: peter-evans/autopep8@v2
         with:
-          args: --recursive --in-place --aggressive --aggressive
+          args: --recursive --in-place --aggressive --aggressive .
     # Обновляем pip, устанавливаем flake8 и flake8-isort, 
     # устанавливаем зависимости проекта:
       - name: Install dependencies
