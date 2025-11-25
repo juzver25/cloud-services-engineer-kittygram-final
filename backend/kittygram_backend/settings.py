@@ -9,7 +9,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-STATIC_ROOT = "/app/collected_static"
+STATIC_ROOT = '/static'
+MEDIA_ROOT = '/media'
 
 INSTALLED_APPS = [
     'django.contrib.admin',

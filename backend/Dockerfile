@@ -6,10 +6,6 @@ COPY requirements.txt .
 
 RUN pip install -r requirements.txt --no-cache-dir
 
-COPY manage.py .
-COPY myproject/ ./myproject/  # замените на имя вашего Django-проекта
-COPY static/ ./static/
-COPY media/ ./media/
+COPY ..
 
-# При старте контейнера запустить сервер разработки.
-CMD ["python", "manage.py", "runserver", "0:8000"]
+CMD ["runserver", "kittygram_backend.wsgi:application", "--bind", "0:8000"]
