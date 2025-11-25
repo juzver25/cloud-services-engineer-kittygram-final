@@ -16,7 +16,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            cd /home/ubuntu/cloud-services-engineer-kittygram-final
+            cd /home/ubuntu/kittygram/cloud-services-engineer-kittygram-final
             git pull
             docker-compose down
             docker-compose up -d --build
