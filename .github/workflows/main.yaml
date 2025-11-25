@@ -23,7 +23,7 @@ jobs:
   notify:
         name: Telegram notify
         runs-on: ubuntu-latest
-        needs: deploy
+        needs: deploy, checkout-and-print-test, build_and_push
 
         steps:
           - name: Send Telegram message
