@@ -22,16 +22,17 @@ jobs:
       - name: Check out repository code  # Имя шага задаём сами.
         uses: actions/checkout@v3  # Берём готовое решение из библиотеки GitHub Actions.
       # Устанавливаем Python с помощью action:
-      - name: autopep8
-        id: autopep8
-        uses: peter-evans/autopep8@v2
-        with:
-          args: --recursive --in-place --aggressive --aggressive
       - name: Set up Python
         uses: actions/setup-python@v4
     # В action setup-python@v4 передаём параметр — версию Python:
         with:
           python-version: 3.9
+      - name: autopep8
+        id: autopep8
+        run: cd /backend
+        uses: peter-evans/autopep8@v2
+        with:
+          args: --recursive --in-place --aggressive --aggressive
     # Обновляем pip, устанавливаем flake8 и flake8-isort, 
     # устанавливаем зависимости проекта:
       - name: Install dependencies
