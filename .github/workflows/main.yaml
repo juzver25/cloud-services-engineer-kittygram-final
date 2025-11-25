@@ -22,7 +22,7 @@ jobs:
       - name: Check out repository code  # Имя шага задаём сами.
         uses: actions/checkout@v3  # Берём готовое решение из библиотеки GitHub Actions.
       # Устанавливаем Python с помощью action:
-        name: Set up Python
+      - name: Set up Python
         uses: actions/setup-python@v4
     # В action setup-python@v4 передаём параметр — версию Python:
         with:
