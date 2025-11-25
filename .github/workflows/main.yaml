@@ -28,6 +28,7 @@ jobs:
           python -m pip install --upgrade pip 
           pip install flake8==6.0.0 flake8-isort==6.0.0
           pip install flake8 pytest
+          pip install requests PyYAML
  
       - name: Test with flake8
         run: python -m flake8 backend/
