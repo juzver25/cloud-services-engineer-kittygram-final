@@ -116,6 +116,8 @@ jobs:
             context: ./nginx
             push: true
             tags: ${{ secrets.DOCKER_USERNAME }}/kittygram_gateway:latest
+
+            #Исправил в прошлый раз, не добавил в kittygram_workflow (((
   notify:
         name: tg 
         runs-on: ubuntu-latest
