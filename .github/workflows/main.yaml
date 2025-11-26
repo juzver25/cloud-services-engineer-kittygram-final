@@ -24,9 +24,9 @@ jobs:
             POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_HOST=postgres
             POSTGRES_PORT=5432
-            SECRET_KEY = ${{ secrets.SECRET_KEY }}
+            SECRET_KEY=${{ secrets.SECRET_KEY }}
             DEBUG=True
-            ALLOWED_HOSTS= ${{ secrets.ALLOWED_HOSTS }}
+            ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
             konec
             docker-compose down
             docker-compose up -d --build
