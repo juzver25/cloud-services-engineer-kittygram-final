@@ -11,8 +11,8 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
-#STATIC_ROOT = '/static'
-#MEDIA_ROOT = '/media'
+STATIC_ROOT = '/static'
+MEDIA_ROOT = '/media'
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -101,10 +101,10 @@ USE_TZ = True
 
 
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'static'
+STATIC_ROOT = '/static'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = '/media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

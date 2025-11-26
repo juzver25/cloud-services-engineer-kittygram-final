@@ -8,8 +8,8 @@ services:
     depends_on:
       - postgres
     volumes:
-      - static:/app/static    
-      - media:/app/media
+      - static:/static    
+      - media:/media
     command: >
       sh -c "python manage.py migrate --noinput &&
       python manage.py runserver 0.0.0.0:8000"  
@@ -33,7 +33,7 @@ services:
     ports:
       - "80:80"         
     volumes:
-#      - static:/static
+      - static:/static
       - media:/media
       - frontend_build:/usr/share/nginx/html
     depends_on:
