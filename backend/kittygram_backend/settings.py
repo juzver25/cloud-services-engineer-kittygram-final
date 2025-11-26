@@ -11,7 +11,8 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
-STATIC_ROOT = '/static'
+#STATIC_ROOT = '/static'
+STATIC_ROOT = '/backend_static'
 MEDIA_ROOT = '/media'
 
 INSTALLED_APPS = [
@@ -100,8 +101,10 @@ USE_L10N = True
 USE_TZ = True
 
 
-STATIC_URL = '/static/'
-STATIC_ROOT = '/static'
+#STATIC_URL = '/static/'
+#STATIC_ROOT = '/static'
+STATIC_URL = '/backend_static/'
+STATIC_ROOT = '/backend_static'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = '/media'
