@@ -33,7 +33,7 @@ services:
     ports:
       - "80:80"         
     volumes:
-      - static:/static
+#      - static:/static
       - media:/media
       - frontend_build:/usr/share/nginx/html
     depends_on:
