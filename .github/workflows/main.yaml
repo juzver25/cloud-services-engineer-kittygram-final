@@ -21,12 +21,12 @@ jobs:
             cat > .env << konec
             POSTGRES_DB=kittygram
             POSTGRES_USER=user
-            POSTGRES_PASSWORD=password
+            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
             POSTGRES_HOST=postgres
             POSTGRES_PORT=5432
-            SECRET_KEY = 'django-insecure-cg6*%6d51ef8f#4!r3*$vmxm4)abgjw8mo!4y-q*uq1!4$-89$'
+            SECRET_KEY = ${{ secrets.SECRET_KEY }}
             DEBUG=True
-            ALLOWED_HOSTS=['*']
+            ALLOWED_HOSTS= ${{ secrets.ALLOWED_HOSTS }}
             konec
             docker-compose down
             docker-compose up -d --build
