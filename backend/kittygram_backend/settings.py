@@ -9,7 +9,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', default=get_random_secret_key())
 
 DEBUG = os.getenv('DEBUG', 'False')
 
-ALLOWED_HOSTS_STR = os.getenv('ALLOWED_HOSTS', default='*')
+ALLOWED_HOSTS_STR = os.getenv('ALLOWED_HOSTS', default='51.250.21.144')
 
 STATIC_ROOT = '/static'
 MEDIA_ROOT = '/media'
