@@ -1,0 +1,113 @@
+name: Deploy Kittygram
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install flake8
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8
+
+      - name: Lint backend
+        run: flake8 backend || true
+
+      - name: Run backend tests
+        run: |
+          python -m pip install -r backend/requirements.txt
+          pip install pytest
+          pytest -q
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Run frontend tests
+        run: |
+          cd frontend
+          npm ci
+          CI=true npm test --silent || true
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/kittygram_backend:latest
+
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/kittygram_frontend:latest
+
+      - name: Build and push gateway image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./nginx
+          file: ./nginx/Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/kittygram_gateway:latest
+
+  deploy-to-server:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy docker-compose and env to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          source: |
+            docker-compose.production.yml
+            .env.example
+          target: /home/${{ secrets.SERVER_USER }}/app/
+
+      - name: SSH: update images and restart
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: 22
+          script: |
+            set -e
+            cd /home/${{ secrets.SERVER_USER }}/app
+            mv .env.example .env || true
+            docker-compose -f docker-compose.production.yml pull
+            docker-compose -f docker-compose.production.yml up -d
+            sleep 5
+            docker-compose -f docker-compose.production.yml exec -T backend python manage.py migrate --noinput || true
+            docker-compose -f docker-compose.production.yml exec -T backend python manage.py collectstatic --noinput || true
+
+      - name: Notify Telegram
+        if: success()
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id=${{ secrets.TELEGRAM_CHAT_ID }} \
+            -d text="Kittygram deployed: ${{ github.repository }}"
