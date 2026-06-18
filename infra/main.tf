@@ -23,7 +23,7 @@ resource "yandex_vpc_security_group" "main" {
   ingress {
     description = "HTTP (Kittygram)"
     protocol    = "TCP"
-    port        = 8000
+    port        = 80
     v4_cidr_blocks = ["0.0.0.0/0"]
   }
 

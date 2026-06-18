@@ -31,17 +31,17 @@ variable "aws_region" {
 }
 
 variable "ssh_key" {
-  description = "SSH Public Key"
+  description = "SSH public key for VM access"
   type        = string
 }
 
 variable "cloud_id" {
-  description = "Cloud ID"
+  description = "Yandex Cloud ID"
   type        = string
 }
 
 variable "folder_id" {
-  description = "Folder ID"
+  description = "Yandex Cloud Folder ID"
   type        = string
 }
 
@@ -91,4 +91,21 @@ variable "nat" {
   description = "Назначать публичный IP"
   type        = bool
   default     = true
+}
+
+variable "default_zone" {
+  description = "Yandex Cloud default zone"
+  type        = string
+  default     = "ru-central1-a"
+}
+
+variable "s3_bucket_name" {
+  description = "Name of the S3 bucket for terraform state"
+  type        = string
+}
+
+variable "vm_image_family" {
+  description = "OS image family for the VM"
+  type        = string
+  default     = "ubuntu-2204-lts"
 }

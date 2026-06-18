@@ -17,6 +17,11 @@ env:
   TF_VAR_cloud_id: ${{ secrets.YC_CLOUD_ID }}
   TF_VAR_folder_id: ${{ secrets.YC_FOLDER_ID }}
   TF_VAR_ssh_key: ${{ secrets.SSH_PUBLIC_KEY }}
+  TF_VAR_s3_bucket_name: ${{ secrets.S3_BUCKET_NAME }}
+  TF_VAR_public_ssh_key: ${{ secrets.SSH_PUBLIC_KEY }}
+  TF_VAR_default_zone: "ru-central1-a"
+  TF_VAR_vm_image_family: "ubuntu-2204-lts"
+  TF_VAR_vm_name: "kittygram-vm"
   AWS_ACCESS_KEY_ID: ${{ secrets.ACCESS_KEY }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.SECRET_KEY }}
 
