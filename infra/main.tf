@@ -59,21 +59,10 @@ resource "yandex_compute_instance" "vm" {
     nat                = true
   }
 
-  metadata = {
-    ssh-keys  = "ubuntu:${var.public_ssh_key}"
-    user-data = <<-EOF
-      #cloud-config
-      package_update: true
-      package_upgrade: true
-      packages:
-        - docker.io
-        - docker-compose-plugin
-      runcmd:
-        - systemctl enable docker
-        - systemctl start docker
-        - usermod -aG docker ubuntu
-    EOF
-  }
+metadata = {
+  ssh-keys  = "ubuntu:${var.public_ssh_key}"
+  user-data = templatefile("${path.module}/cloud-init.yaml.tftpl", { ssh_key = var.public_ssh_key })
+}
 }
 
 data "yandex_compute_image" "ubuntu" {
