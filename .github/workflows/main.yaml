@@ -1,154 +1,157 @@
-name: Main Workflow
+name: Main workflow
+
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["Terraform"]
+    types:
+      - completed
 
 jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8==6.0.0 flake8-isort==6.0.0
+    - name: Test with flake8
+      run: python -m flake8 backend/
+  build_and_push_to_docker_hub:
+    name: Push Docker image to DockerHub
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Docker
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Push to DockerHub
+        uses: docker/build-push-action@v4
+        with:
+          context: ./backend/
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/kittygram_backend:latest
+  build_frontend_and_push_to_docker_hub:
+    name: Push Docker image to DockerHub
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Docker
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Push to DockerHub
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend/
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/kittygram_frontend:latest
+  build_gateway_and_push_to_docker_hub:
+    name: Push Docker image to DockerHub
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Login to Docker
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Push to DockerHub
+        uses: docker/build-push-action@v4
+        with:
+          context: ./nginx/
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/kittygram_gateway:latest
   deploy:
     runs-on: ubuntu-latest
+    needs:
+      - build_and_push_to_docker_hub
+      - build_frontend_and_push_to_docker_hub
+      - build_gateway_and_push_to_docker_hub
+
     steps:
-      - uses: actions/checkout@v3
-      - name: SSH Deploy
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SSH_KEY }}
-          script: |
-            cd /home/ubuntu/kittygram/cloud-services-engineer-kittygram-final
-            git pull
-            cat > .env << konec
-            POSTGRES_DB=kittygram
-            POSTGRES_USER=user
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            POSTGRES_HOST=postgres
-            POSTGRES_PORT=5432
-            SECRET_KEY=${{ secrets.SECRET_KEY }}
-            DEBUG=True
-            ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
-            konec
-            docker-compose down
-            docker-compose up -d --build
-  
-  checkout-and-print-test:
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: vm-ip
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        run-id: ${{ github.event.workflow_run.id }}
+
+    - name: Read VM IP
+      id: read-ip
+      run: echo "VM_IP=$(cat vm_ip.txt | xargs)" >> $GITHUB_OUTPUT
+
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Copy docker-compose.yml via ssh
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ steps.read-ip.outputs.VM_IP }}
+        username: ${{ secrets.USER }}
+        key: ${{ secrets.SSH_KEY }}
+        source: "docker-compose.production.yml,tests.yml,test/*.*"
+        target: "kittygram"
+        timeout: "60s"
+        command_timeout: "10m"
+    - name: Executing remote ssh commands to deploy
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ steps.read-ip.outputs.VM_IP }}
+        username: ${{ secrets.USER }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          cd kittygram
+          cat > .env << EOF
+          DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}
+          DATABASE_ENGINE=${{ secrets.DATABASE_ENGINE }}
+          DATABASE_NAME: ${{ secrets.DATABASE_NAME }}
+          DATABASE_USER=${{ secrets.DATABASE_USER }}
+          DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
+          DATABASE_HOST=${{ secrets.DATABASE_HOST }}
+          DATABASE_PORT=${{ secrets.DATABASE_PORT }}
+          DEBUG=${{ secrets.DEBUG }}
+          ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
+          ACCESS_KEY=${{ secrets.ACCESS_KEY_DJANGO }}
+          SECRET_KEY=${{ secrets.SECRET_KEY_DJANGO }}
+          EOF
+          # Выполняет pull образов с Docker Hub
+          sudo docker compose -f docker-compose.production.yml pull
+          # Перезапускает все контейнеры в Docker Compose
+          sudo docker compose -f docker-compose.production.yml down
+          sudo docker compose -f docker-compose.production.yml up -d
+
+  send_message:
     runs-on: ubuntu-latest
     needs: deploy
     steps:
-      - name: Check out repository code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.9
-
-      - name: Check kittygram
-        run: |
-             curl -v http://51.250.21.144:80
-
-      - name: autopep8
-        id: autopep8
-        uses: peter-evans/autopep8@v2
-        with:
-          args: --recursive --in-place --aggressive backend/    
-   
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip 
-          pip install flake8==6.0.0 flake8-isort==6.0.0
-          pip install flake8 pytest
-          pip install requests PyYAML
- 
-      - name: Test with flake8
-        run: python -m flake8 backend/
-
-      - name: Run backend tests (pytest)
-        run: |
-          pytest
-      
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-
-      - name: Install frontend deps
-        working-directory: ./frontend
-        run: |
-          npm ci
-
-      - name: Run frontend tests
-        working-directory: ./frontend
-        run: |
-          npm test -- --watch=false
-      
-  build_and_push:
-      name: Build & Push Docker images
-      runs-on: ubuntu-latest
-      needs: checkout-and-print-test
-
-      steps:
-        - name: Checkout repo
-          uses: actions/checkout@v4
-
-        - name: Log in to Docker Hub
-          uses: docker/login-action@v3
-          with:
-            username: ${{ secrets.DOCKER_USERNAME }}
-            password: ${{ secrets.DOCKER_PASSWORD }}
-        - name: Build & push backend
-          uses: docker/build-push-action@v6
-          with:
-            context: ./backend
-            push: true
-            tags: ${{ secrets.DOCKER_USERNAME }}/kittygram_backend:latest
-
-        - name: Build & push frontend
-          uses: docker/build-push-action@v6
-          with:
-            context: ./frontend
-            push: true
-            tags: ${{ secrets.DOCKER_USERNAME }}/kittygram_frontend:latest
-
-        - name: Build & push gateway
-          uses: docker/build-push-action@v6
-          with:
-            context: ./nginx
-            push: true
-            tags: ${{ secrets.DOCKER_USERNAME }}/kittygram_gateway:latest
-  notify:
-        name: tg 
-        runs-on: ubuntu-latest
-        needs: [deploy,checkout-and-print-test,build_and_push]
-        steps:
-          - name: send telegram message on push
-            uses: appleboy/telegram-action@master
-            with:
-              to: ${{ secrets.TELEGRAM_CHAT_ID }}
-              token: ${{ secrets.TELEGRAM_TOKEN }}
-              message: |
-                ${{ github.actor }} created commit:
-                Commit message: ${{ github.event.commits[0].message }}
-            
-                Repository: ${{ github.repository }}
-            
-                See changes: https://github.com/${{ github.repository }}/commit/${{github.sha}}
-
-
-
-
-
-
-
-
-
-
-
-
-     
-  
-        
-
-  
-          
-        
+    - name: Send message
+      uses: appleboy/telegram-action@master
+      with:
+        to: ${{ secrets.TELEGRAM_TO }}
+        token: ${{ secrets.TELEGRAM_TOKEN }}
+        message: 'Успех! Деплой выполнил ${{ github.actor }}. Коммит: https://github.com/${{ github.repository }}/commit/${{ github.sha }}'
