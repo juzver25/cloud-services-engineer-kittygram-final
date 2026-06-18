@@ -109,7 +109,7 @@ jobs:
         DJANGO_ACCESS_KEY=${{ secrets.DJANGO_ACCESS_KEY }}
         DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
         DEBUG=${{ secrets.DEBUG }}
-        ALLOWED_HOSTS=${{ secrets.SSH_HOST }}
+        ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
         DOTENV
 
     - name: Setup SSH key

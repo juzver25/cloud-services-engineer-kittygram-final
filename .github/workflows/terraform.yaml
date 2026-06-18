@@ -54,10 +54,16 @@ jobs:
         if: ${{ github.event.inputs.action == 'apply' }}
         run: terraform apply -auto-approve
 
+      - name: Get VM IP
+        if: github.event.inputs.action == 'apply'
+        working-directory: ./infra
+        run: terraform output -raw external_ip > ../vm_ip.txt
+
       - name: Update SSH_HOST secret
         if: github.event.inputs.action == 'apply'
         run: |
-          IP=$(terraform -chdir=./infra output -raw external_ip)
+          IP=$(cat vm_ip.txt | xargs)
+          echo "Setting SSH_HOST to $IP"
           gh secret set SSH_HOST --body "$IP" --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
