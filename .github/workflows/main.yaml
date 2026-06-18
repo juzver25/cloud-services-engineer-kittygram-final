@@ -2,7 +2,7 @@ name: Main workflow
 
 on:
   workflow_run:
-    workflows: ["Terraform Infrastructure"]           # имя твоего Terraform-воркфлоу
+    workflows: ["Terraform Infrastructure"] 
     types:
       - completed
 
