@@ -98,27 +98,15 @@ jobs:
       - build_and_push_to_docker_hub
       - build_frontend_and_push_to_docker_hub
       - build_gateway_and_push_to_docker_hub
-
     steps:
-    - name: Download VM IP artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: vm-ip
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        run-id: ${{ github.event.workflow_run.id }}
-
-    - name: Read VM IP
-      id: read-ip
-      run: echo "VM_IP=$(cat vm_ip.txt | xargs)" >> $GITHUB_OUTPUT
-
     - name: Checkout repo
       uses: actions/checkout@v3
 
     - name: Copy files via SCP
       uses: appleboy/scp-action@master
       with:
-        host: ${{ steps.read-ip.outputs.VM_IP }}
-        username: ${{ secrets.SSH_USER }}          # обычно ubuntu
+        host: ${{ secrets.SSH_HOST }}
+        username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         source: "docker-compose.production.yml,tests.yml,tests/*"
         target: "kittygram"
@@ -128,12 +116,11 @@ jobs:
     - name: Executing remote ssh commands to deploy
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ steps.read-ip.outputs.VM_IP }}
+        host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
           cd kittygram
-          # Создаём .env из секретов
           cat > .env << 'EOF'
           DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
           DJANGO_ACCESS_KEY=${{ secrets.DJANGO_ACCESS_KEY }}
@@ -141,13 +128,9 @@ jobs:
           DEBUG=${{ secrets.DEBUG }}
           ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
           EOF
-
-          # Обновляем образы и перезапускаем
           sudo docker compose -f docker-compose.production.yml pull
           sudo docker compose -f docker-compose.production.yml down
           sudo docker compose -f docker-compose.production.yml up -d
-
-          # Миграции и статика
           sudo docker compose -f docker-compose.production.yml exec -T backend python manage.py migrate
           sudo docker compose -f docker-compose.production.yml exec -T backend python manage.py collectstatic --noinput
 
