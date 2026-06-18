@@ -58,7 +58,7 @@ jobs:
         if: github.event.inputs.action == 'apply'
         working-directory: ./infra
         run: |
-          terraform state show yandex_compute_instance.vm | grep -oP 'nat_ip_address\s*=\s*"\K[^"]+' > ../vm_ip.txt
+          terraform state show yandex_compute_instance.vm | grep -oP 'nat_ip_address\s*=\s*"\K[^"]+' | head -1 > ../vm_ip.txt
 
       - name: Upload VM IP artifact
         if: github.event.inputs.action == 'apply'
