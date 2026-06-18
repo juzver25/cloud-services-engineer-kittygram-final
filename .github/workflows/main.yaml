@@ -104,6 +104,7 @@ jobs:
       with:
         name: vm-ip
         path: ./
+        run-id: ${{ github.event.workflow_run.id }}
 
     - name: Read VM IP
       id: ip
