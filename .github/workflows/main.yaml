@@ -102,37 +102,42 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v3
 
-    - name: Copy files via SCP
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        source: "docker-compose.production.yml,tests.yml,tests/*"
-        target: "kittygram"
-        timeout: "60s"
-        command_timeout: "10m"
+    - name: Setup SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-    - name: Executing remote ssh commands to deploy
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        script: |
-          cd kittygram
-          cat > .env << 'EOF'
+    - name: Copy files via SCP
+      run: |
+        ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/kittygram"
+        scp -o StrictHostKeyChecking=accept-new \
+          docker-compose.production.yml \
+          tests.yml \
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/kittygram/
+        # если нужна папка tests
+        tar czf tests.tar.gz tests/
+        scp tests.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/kittygram/
+        ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ~/kittygram && tar xzf tests.tar.gz"
+
+    - name: Remote deploy
+      run: |
+        ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+          cd ~/kittygram
+          cat > .env << 'ENVEOF'
           DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
           DJANGO_ACCESS_KEY=${{ secrets.DJANGO_ACCESS_KEY }}
           DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
           DEBUG=${{ secrets.DEBUG }}
           ALLOWED_HOSTS=${{ secrets.ALLOWED_HOSTS }}
-          EOF
+          ENVEOF
           sudo docker compose -f docker-compose.production.yml pull
           sudo docker compose -f docker-compose.production.yml down
           sudo docker compose -f docker-compose.production.yml up -d
           sudo docker compose -f docker-compose.production.yml exec -T backend python manage.py migrate
           sudo docker compose -f docker-compose.production.yml exec -T backend python manage.py collectstatic --noinput
+        EOF
 
   send_message:
     runs-on: ubuntu-latest
