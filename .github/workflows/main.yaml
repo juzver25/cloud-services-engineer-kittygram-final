@@ -102,6 +102,16 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v3
 
+    - name: Create .env file
+      run: |
+        cat > .env << 'DOTENV'
+        DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+        DJANGO_ACCESS_KEY=${{ secrets.DJANGO_ACCESS_KEY }}
+        DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
+        DEBUG=${{ secrets.DEBUG }}
+        ALLOWED_HOSTS=${{ secrets.SSH_HOST }}
+        DOTENV
+
     - name: Setup SSH key
       run: |
         mkdir -p ~/.ssh
@@ -114,6 +124,7 @@ jobs:
         ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=accept-new ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/kittygram"
         scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=accept-new \
           docker-compose.production.yml \
+          .env \
           tests.yml \
           ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/kittygram/
         tar czf tests.tar.gz tests/
@@ -124,13 +135,6 @@ jobs:
       run: |
         ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
           cd ~/kittygram
-          cat > .env << 'ENVEOF'
-          DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
-          DJANGO_ACCESS_KEY=${{ secrets.DJANGO_ACCESS_KEY }}
-          DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
-          DEBUG=${{ secrets.DEBUG }}
-          ALLOWED_HOSTS=${{ secrets.SSH_HOST }}
-          ENVEOF
           sudo docker compose -f docker-compose.production.yml pull
           sudo docker compose -f docker-compose.production.yml down
           sudo docker compose -f docker-compose.production.yml up -d
