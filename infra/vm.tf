@@ -22,6 +22,6 @@ resource "yandex_compute_instance" "kittygram_vm" {
   }
 
   metadata = {
-    ssh-keys = "ubuntu:${file("~/.ssh/id_rsa.pub")}" # или подставь публичный ключ из секретов
+    ssh-keys = "ubuntu:${secret.SSH_PUBLIC_KEY}" # или подставь публичный ключ из секретов
   }
 }
