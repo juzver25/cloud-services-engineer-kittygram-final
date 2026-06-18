@@ -125,11 +125,13 @@ jobs:
     - name: Executing remote ssh commands to deploy
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ steps.read-ip.outputs.VM_IP }}
+        host: ${{ secrets.SSH_HOST }}
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
           cd kittygram
+          echo "${{ secrets.DOCKER_PASSWORD }}" | sudo docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+
           touch .env 
           echo DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }} >> .env
           echo DJANGO_ACCESS_KEY=${{ secrets.DJANGO_ACCESS_KEY }} >> .env
