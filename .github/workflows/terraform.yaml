@@ -35,6 +35,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Create YC key file
+        run: echo '${{ secrets.YC_SERVICE_ACCOUNT_KEY }}' > /tmp/yc_key.json
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
