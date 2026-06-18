@@ -58,8 +58,8 @@ jobs:
         if: github.event.inputs.action == 'apply'
         working-directory: ./infra
         run: |
-          terraform output -json | jq -r '.external_ip.value' > ../vm_ip.txt
-          echo "IP is $(cat ../vm_ip.txt)"
+          terraform state show yandex_compute_instance.vm | grep -oP 'nat_ip_address\s*=\s*"\K[^"]+' | head -1 > ../vm_ip.txt
+          echo "Extracted IP: $(cat ../vm_ip.txt)"
 
       - name: Update SSH_HOST secret
         if: github.event.inputs.action == 'apply'
