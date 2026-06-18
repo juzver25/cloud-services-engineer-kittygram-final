@@ -14,31 +14,30 @@ resource "yandex_vpc_security_group" "main" {
   network_id  = yandex_vpc_network.main.id
 
   ingress {
-    description = "SSH"
-    protocol    = "TCP"
-    port        = 22
+    description    = "SSH"
+    protocol       = "TCP"
+    port           = 22
     v4_cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    description = "HTTP (Kittygram)"
-    protocol    = "TCP"
-    port        = 80
+    description    = "HTTP"
+    protocol       = "TCP"
+    port           = 80
     v4_cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
-    description = "Весь исходящий трафик"
-    protocol    = "ANY"
+    description    = "All outbound"
+    protocol       = "ANY"
     v4_cidr_blocks = ["0.0.0.0/0"]
-    from_port   = 0
-    to_port     = 65535
+    from_port      = 0
+    to_port        = 65535
   }
 }
 
 resource "yandex_storage_bucket" "terraform_state" {
   bucket = var.s3_bucket_name
-  acl    = "private"
 }
 
 resource "yandex_compute_instance" "vm" {
@@ -61,12 +60,13 @@ resource "yandex_compute_instance" "vm" {
   network_interface {
     subnet_id          = yandex_vpc_subnet.main.id
     security_group_ids = [yandex_vpc_security_group.main.id]
-    nat                = true  
+    nat                = true
   }
 
   metadata = {
-    ssh-keys = "ubuntu:${var.public_ssh_key}"
+    ssh-keys  = "ubuntu:${var.public_ssh_key}"
     user-data = <<-EOF
+      #cloud-config
       package_update: true
       package_upgrade: true
       packages:
@@ -76,10 +76,6 @@ resource "yandex_compute_instance" "vm" {
         - systemctl enable docker
         - systemctl start docker
         - usermod -aG docker ubuntu
-        - curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-        - chmod +x /usr/local/bin/docker-compose
-        - su - ubuntu -c "git clone https://github.com/your-repo/kittygram.git /home/ubuntu/kittygram"
-        - cd /home/ubuntu/kittygram && docker-compose up -d
     EOF
   }
 }
