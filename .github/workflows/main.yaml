@@ -99,17 +99,6 @@ jobs:
       - build_frontend_and_push_to_docker_hub
       - build_gateway_and_push_to_docker_hub
     steps:
-    - name: Download VM IP artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: vm-ip
-        path: ./
-        run-id: ${{ github.event.workflow_run.id }}
-
-    - name: Read VM IP
-      id: ip
-      run: echo "IP=$(cat vm_ip.txt | xargs)" >> $GITHUB_OUTPUT
-
     - name: Checkout repo
       uses: actions/checkout@v3
 
@@ -118,30 +107,29 @@ jobs:
         mkdir -p ~/.ssh
         printf '%s\n' "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ steps.ip.outputs.IP }} >> ~/.ssh/known_hosts
+        ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
     - name: Copy files via SCP
       run: |
-        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=accept-new ${{ secrets.SSH_USER }}@${{ steps.ip.outputs.IP }} "mkdir -p ~/kittygram"
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=accept-new ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "mkdir -p ~/kittygram"
         scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=accept-new \
           docker-compose.production.yml \
           tests.yml \
-          ${{ secrets.SSH_USER }}@${{ steps.ip.outputs.IP }}:~/kittygram/
-        # если нужна папка tests
+          ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/kittygram/
         tar czf tests.tar.gz tests/
-        scp -i ~/.ssh/id_rsa tests.tar.gz ${{ secrets.SSH_USER }}@${{ steps.ip.outputs.IP }}:~/kittygram/
-        ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ steps.ip.outputs.IP }} "cd ~/kittygram && tar xzf tests.tar.gz"
+        scp -i ~/.ssh/id_rsa tests.tar.gz ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}:~/kittygram/
+        ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} "cd ~/kittygram && tar xzf tests.tar.gz"
 
     - name: Remote deploy
       run: |
-        ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ steps.ip.outputs.IP }} << 'EOF'
+        ssh -i ~/.ssh/id_rsa ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
           cd ~/kittygram
           cat > .env << 'ENVEOF'
           DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
           DJANGO_ACCESS_KEY=${{ secrets.DJANGO_ACCESS_KEY }}
           DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
           DEBUG=${{ secrets.DEBUG }}
-          ALLOWED_HOSTS=${{ steps.ip.outputs.IP }}
+          ALLOWED_HOSTS=${{ secrets.SSH_HOST }}
           ENVEOF
           sudo docker compose -f docker-compose.production.yml pull
           sudo docker compose -f docker-compose.production.yml down

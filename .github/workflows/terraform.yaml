@@ -54,18 +54,13 @@ jobs:
         if: ${{ github.event.inputs.action == 'apply' }}
         run: terraform apply -auto-approve
 
-      - name: Get VM IP
+      - name: Update SSH_HOST secret
         if: github.event.inputs.action == 'apply'
-        working-directory: ./infra
         run: |
-          terraform state show yandex_compute_instance.vm | grep -oP 'nat_ip_address\s*=\s*"\K[^"]+' | head -1 > ../vm_ip.txt
-
-      - name: Upload VM IP artifact
-        if: github.event.inputs.action == 'apply'
-        uses: actions/upload-artifact@v4
-        with:
-          name: vm-ip
-          path: vm_ip.txt
+          IP=$(terraform -chdir=./infra output -raw external_ip)
+          gh secret set SSH_HOST --body "$IP" --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
 
       - name: Terraform Destroy
         if: ${{ github.event.inputs.action == 'destroy' }}
