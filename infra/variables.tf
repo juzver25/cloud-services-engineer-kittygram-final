@@ -1,55 +1,93 @@
+variable "vpc_name" {
+  description = "VPC Name"
+  type        = string
+  default     = "infra-network"
+}
+
+variable "net_cidr" {
+  description = "Subnet structure"
+  type = list(object({
+    name   = string
+    zone   = string
+    prefix = string
+  }))
+
+  default = [
+    { name = "infra-subnet-a", zone = "ru-central1-a", prefix = "10.129.1.0/24" },
+    { name = "infra-subnet-b", zone = "ru-central1-b", prefix = "10.130.1.0/24" },
+    { name = "infra-subnet-d", zone = "ru-central1-d", prefix = "10.131.1.0/24" },
+  ]
+}
+
+variable "vm_1_name" {
+  type        = string
+  default     = "vm-kittygram"
+}
+
+variable "aws_region" {
+  description = "AWS Region name"
+  type        = string
+}
+
+variable "ssh_key" {
+  description = "SSH Public Key"
+  type        = string
+}
+
 variable "cloud_id" {
-  description = "Идентификатор облака"
+  description = "Cloud ID"
   type        = string
 }
 
 variable "folder_id" {
-  description = "Идентификатор каталога"
+  description = "Folder ID"
   type        = string
 }
 
-variable "default_zone" {
+variable "zone" {
   description = "Зона доступности по умолчанию"
   type        = string
   default     = "ru-central1-a"
 }
 
-variable "service_account_key_file" {
-  description = "файл c ключом сервисного аккаунта"
+variable "platform_id" {
+  description = "Платформа ВМ"
   type        = string
+  default     = "standard-v2"
 }
 
-variable "vm_name" {
-  description = "Имя виртуальной машины"
+variable "image_family" {
+  description = "Семейство образа ОС"
   type        = string
-  default     = "kittygram-vm"
+  default     = "ubuntu-2004-lts"
 }
 
-variable "vm_image_family" {
-  description = "Семейство образа для ВМ (Ubuntu 22.04 LTS)"
-  type        = string
-  default     = "ubuntu-2204-lts"
+variable "cores" {
+  description = "Количество ядер CPU"
+  type        = number
+  default     = 2
 }
 
-variable "public_ssh_key" {
-  description = "Публичный SSH-ключ для доступа к ВМ"
-  type        = string
-  sensitive   = true
+variable "memory" {
+  description = "Объем RAM (ГБ)"
+  type        = number
+  default     = 4
 }
 
-variable "s3_access_key" {
-  description = "статический ключ сервисного аккаунта"
+variable "disk_type" {
+  description = "Тип диска (network-hdd, network-ssd)"
   type        = string
-  sensitive   = true
+  default     = "network-ssd"
 }
 
-variable "s3_secret_key" {
-  description = "Секретный ключ для S3-бакета"
-  type        = string
-  sensitive   = true
+variable "disk_size" {
+  description = "Размер диска (ГБ)"
+  type        = number
+  default     = 40
 }
 
-variable "s3_bucket_name" {
-  description = "Имя бакета для хранения state Terraform"
-  type        = string
+variable "nat" {
+  description = "Назначать публичный IP"
+  type        = bool
+  default     = true
 }
