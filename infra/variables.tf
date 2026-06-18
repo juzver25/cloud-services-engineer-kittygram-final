@@ -27,6 +27,7 @@ variable "vm_1_name" {
 variable "aws_region" {
   description = "AWS Region name"
   type        = string
+  default = "ru-central1"
 }
 
 variable "ssh_key" {
