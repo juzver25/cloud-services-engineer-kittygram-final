@@ -36,10 +36,6 @@ resource "yandex_vpc_security_group" "main" {
   }
 }
 
-resource "yandex_storage_bucket" "terraform_state" {
-  bucket = var.s3_bucket_name
-}
-
 resource "yandex_compute_instance" "vm" {
   name        = var.vm_name
   platform_id = "standard-v3"
