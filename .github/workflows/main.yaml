@@ -128,7 +128,9 @@ jobs:
           cd kittygram
           echo "${{ secrets.DOCKER_PASSWORD }}" | sudo docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-          touch .env 
+          # Полностью пересоздаём .env (стираем старый)
+          rm -f .env
+          touch .env
           echo DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }} >> .env
           echo DJANGO_ACCESS_KEY=${{ secrets.DJANGO_ACCESS_KEY }} >> .env
           echo DJANGO_SECRET_KEY='${{ secrets.DJANGO_SECRET_KEY }}' >> .env
